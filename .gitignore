@@ -1,0 +1,15 @@
+# Maven
+backend/target/
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+backend/target/
+backend/src/main/resources/application.properties

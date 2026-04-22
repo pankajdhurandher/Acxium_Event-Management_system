@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>TechMart – Checkout</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-success px-3">
+  <span class="navbar-brand">TechMart – Checkout</span>
+  <a class="btn btn-outline-light btn-sm ms-auto" href="cart.html">← Back to Cart</a>
+</nav>
+
+<div class="container mt-4" style="max-width:600px;">
+  <h4>Complete Your Order</h4>
+  <hr/>
+
+  <!-- Delivery Address -->
+  <div class="mb-3">
+    <label class="form-label fw-bold">Delivery Address</label>
+    <textarea class="form-control" id="address" rows="3"
+              placeholder="Enter your full delivery address..."></textarea>
+  </div>
+
+  <!-- Payment Method – matches "Cash / UPI" dropdown in Excel CheckOut sheet -->
+  <div class="mb-3">
+    <label class="form-label fw-bold">Payment Method</label>
+    <select class="form-select" id="paymentMethod">
+      <option value="CASH">Cash on Delivery</option>
+      <option value="UPI">UPI</option>
+    </select>
+  </div>
+
+  <div id="alertMsg" class="d-none alert"></div>
+
+  <button class="btn btn-success w-100 btn-lg" onclick="placeOrder()">Place Order</button>
+</div>
+
+<script>
+  const API  = 'http://localhost:8080/api';
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  if (!user || user.role !== 'USER') window.location.href = 'login.html';
+
+  async function placeOrder() {
+    const address       = document.getElementById('address').value.trim();
+    const paymentMethod = document.getElementById('paymentMethod').value;
+
+    if (!address) { showAlert('Please enter a delivery address.', false); return; }
+
+    try {
+      const res  = await fetch(`${API}/orders/checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, address, paymentMethod })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Save order ID and redirect to Success page
+        localStorage.setItem('lastOrderId', data.data);
+        window.location.href = 'success.html';
+      } else {
+        showAlert(data.message, false);
+      }
+    } catch(e) { showAlert('Error placing order. Try again.', false); }
+  }
+
+  function showAlert(msg, ok) {
+    const el = document.getElementById('alertMsg');
+    el.textContent = msg;
+    el.className = `alert ${ok ? 'alert-success' : 'alert-danger'}`;
+  }
+</script>
+</body>
+</html>

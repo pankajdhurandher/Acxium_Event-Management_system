@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TechMart – Login</title>
+  <!-- Bootstrap 5 CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <style>
+    body { background: #f0f2f5; }
+    .login-card { max-width: 420px; margin: 80px auto; }
+  </style>
+</head>
+<body>
+
+<div class="login-card">
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white text-center">
+      <h4 class="mb-0">TechMart Login</h4>
+    </div>
+    <div class="card-body p-4">
+
+      <!-- Role selector -->
+      <div class="mb-3">
+        <label class="form-label fw-bold">Login As</label>
+        <select class="form-select" id="roleSelect" onchange="updateRole()">
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+          <option value="vendor">Vendor</option>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-control" id="email" placeholder="Enter your email"/>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-control" id="password" placeholder="Enter password"/>
+      </div>
+
+      <div id="errorMsg" class="alert alert-danger d-none"></div>
+
+      <button class="btn btn-primary w-100" onclick="doLogin()">Login</button>
+
+      <hr/>
+      <div class="text-center">
+        <span id="signupText">New user? </span>
+        <a href="signup-user.html" id="signupLink">Sign Up</a>
+        &nbsp;|&nbsp;
+        <a href="signup-vendor.html" id="vendorSignupLink">Vendor Sign Up</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:8080/api';
+
+  function updateRole() {
+    const role = document.getElementById('roleSelect').value;
+    const vendorLink = document.getElementById('vendorSignupLink');
+    vendorLink.style.display = role === 'vendor' ? 'inline' : 'inline';
+  }
+
+  async function doLogin() {
+    const role  = document.getElementById('roleSelect').value;
+    const email = document.getElementById('email').value.trim();
+    const pass  = document.getElementById('password').value;
+    const errEl = document.getElementById('errorMsg');
+
+    if (!email || !pass) {
+      showError('Please fill in all fields.');
+      return;
+    }
+
+    const endpoint = `${API}/auth/${role}/login`;
+
+    try {
+      const res  = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pass })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Save user info to localStorage so other pages can read it
+        localStorage.setItem('user', JSON.stringify(data.data));
+        // Redirect based on role
+        const userRole = data.data.role;
+        if (userRole === 'ADMIN')  window.location.href = 'admin-dashboard.html';
+        else if (userRole === 'VENDOR') window.location.href = 'vendor-dashboard.html';
+        else window.location.href = 'products.html';
+      } else {
+        showError(data.message);
+      }
+    } catch (e) {
+      showError('Cannot connect to server. Make sure Spring Boot is running on port 8080.');
+    }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg;
+    el.classList.remove('d-none');
+  }
+</script>
+</body>
+</html>

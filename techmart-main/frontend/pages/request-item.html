@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>TechMart – Request Item</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-primary px-3">
+  <span class="navbar-brand">TechMart – Request an Item</span>
+  <div class="ms-auto">
+    <a class="btn btn-outline-light btn-sm" href="products.html">← Back</a>
+  </div>
+</nav>
+
+<div class="container mt-4" style="max-width:600px;">
+  <h4>Request a New Item</h4>
+  <p class="text-muted">Can't find what you need? Submit a request — vendors will see it.</p>
+  <hr/>
+
+  <div class="mb-3">
+    <label class="form-label">Item Name</label>
+    <input type="text" class="form-control" id="itemName" placeholder="e.g. Mechanical Keyboard"/>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Description (optional)</label>
+    <textarea class="form-control" id="description" rows="3"
+              placeholder="Any specific requirements, brand, model etc."></textarea>
+  </div>
+
+  <div id="alertMsg" class="d-none alert"></div>
+  <button class="btn btn-primary w-100" onclick="submitRequest()">Submit Request</button>
+
+  <hr/>
+  <h5>My Previous Requests</h5>
+  <div id="myRequests"><p class="text-muted">Loading...</p></div>
+</div>
+
+<script>
+  const API  = 'http://localhost:8080/api';
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  if (!user || user.role !== 'USER') window.location.href = 'login.html';
+
+  window.onload = loadMyRequests;
+
+  async function submitRequest() {
+    const itemName    = document.getElementById('itemName').value.trim();
+    const description = document.getElementById('description').value.trim();
+    if (!itemName) { showAlert('Item name is required.', false); return; }
+
+    const res  = await fetch(`${API}/requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: user.id, itemName, description })
+    });
+    const data = await res.json();
+    showAlert(data.message, data.success);
+    if (data.success) {
+      document.getElementById('itemName').value = '';
+      document.getElementById('description').value = '';
+      loadMyRequests();
+    }
+  }
+
+  async function loadMyRequests() {
+    const res  = await fetch(`${API}/requests/user/${user.id}`);
+    const list = await res.json();
+    const cont = document.getElementById('myRequests');
+    if (!list || list.length === 0) { cont.innerHTML = '<p class="text-muted">No requests yet.</p>'; return; }
+
+    const badge = { OPEN:'primary', SEEN:'warning', FULFILLED:'success' };
+    cont.innerHTML = `<table class="table table-bordered table-sm">
+      <thead class="table-light"><tr><th>Item</th><th>Description</th><th>Status</th><th>Date</th></tr></thead>
+      <tbody>
+        ${list.map(r => `
+          <tr>
+            <td>${r.itemName}</td>
+            <td>${r.description || '—'}</td>
+            <td><span class="badge bg-${badge[r.status]}">${r.status}</span></td>
+            <td>${r.createdAt ? r.createdAt.substring(0,10) : '—'}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>`;
+  }
+
+  function showAlert(msg, ok) {
+    const el = document.getElementById('alertMsg');
+    el.textContent = msg;
+    el.className = `alert ${ok ? 'alert-success' : 'alert-danger'}`;
+    setTimeout(() => el.classList.add('d-none'), 3000);
+  }
+</script>
+</body>
+</html>

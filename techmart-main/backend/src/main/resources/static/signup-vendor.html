@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>TechMart – Vendor Registration</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <style> body{background:#f0f2f5;} .card{max-width:440px;margin:60px auto;} </style>
+</head>
+<body>
+<div class="card shadow">
+  <div class="card-header bg-warning text-dark text-center">
+    <h4 class="mb-0">Vendor Registration</h4>
+  </div>
+  <div class="card-body p-4">
+    <div class="mb-3">
+      <label class="form-label">Business Name</label>
+      <input type="text" class="form-control" id="businessName" placeholder="Your shop/company name"/>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Email</label>
+      <input type="email" class="form-control" id="email" placeholder="vendor@example.com"/>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Phone</label>
+      <input type="text" class="form-control" id="phone" placeholder="10-digit mobile number"/>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Password</label>
+      <input type="password" class="form-control" id="password" placeholder="Create a password"/>
+    </div>
+    <div id="msg" class="d-none alert"></div>
+    <button class="btn btn-warning w-100" onclick="register()">Register as Vendor</button>
+    <div class="text-center mt-3">
+      Already registered? <a href="login.html">Login</a>
+    </div>
+  </div>
+</div>
+<script>
+  async function register() {
+    const businessName = document.getElementById('businessName').value.trim();
+    const email        = document.getElementById('email').value.trim();
+    const phone        = document.getElementById('phone').value.trim();
+    const password     = document.getElementById('password').value;
+
+    if (!businessName || !email || !password) { showMsg('Fill all required fields.', false); return; }
+
+    try {
+      const res  = await fetch('http://localhost:8080/api/auth/vendor/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessName, email, phone, password })
+      });
+      const data = await res.json();
+      showMsg(data.message, data.success);
+      if (data.success) setTimeout(() => window.location.href = 'login.html', 1500);
+    } catch(e) { showMsg('Server not reachable.', false); }
+  }
+
+  function showMsg(msg, ok) {
+    const el = document.getElementById('msg');
+    el.textContent = msg;
+    el.className = `alert ${ok ? 'alert-success' : 'alert-danger'}`;
+  }
+</script>
+</body>
+</html>

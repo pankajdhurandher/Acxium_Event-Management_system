@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>TechMart – Vendor Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-warning px-3">
+  <span class="navbar-brand text-dark fw-bold">TechMart – Vendor Panel</span>
+  <div class="ms-auto d-flex gap-2">
+    <span class="text-dark align-self-center" id="vendorName"></span>
+    <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<div class="container mt-4">
+
+  <!-- Tab navigation -->
+  <ul class="nav nav-tabs" id="vendorTabs">
+    <li class="nav-item">
+      <button class="nav-link active" onclick="showTab('products')">My Products</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" onclick="showTab('addProduct')">Add Product</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" onclick="showTab('orders')">All Orders</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" onclick="showTab('requests')">Item Requests</button>
+    </li>
+  </ul>
+
+  <div class="mt-3">
+
+    <!-- ── TAB 1: MY PRODUCTS (Vendor Page sheet) ───────────────────────────── -->
+    <div id="tab-products">
+      <h5>My Products</h5>
+      <div id="productAlert" class="d-none alert"></div>
+      <table class="table table-bordered table-hover">
+        <thead class="table-light">
+          <tr><th>ID</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="productTableBody">
+          <tr><td colspan="6" class="text-center text-muted">Loading...</td></tr>
+        </tbody>
+      </table>
+
+      <!-- Inline edit form (hidden by default) -->
+      <div id="editForm" class="card p-3 d-none mt-2">
+        <h6>Edit Product</h6>
+        <input type="hidden" id="editProductId"/>
+        <div class="row g-2">
+          <div class="col-md-4">
+            <input class="form-control" id="editName" placeholder="Product name"/>
+          </div>
+          <div class="col-md-4">
+            <input class="form-control" id="editCategory" placeholder="Category"/>
+          </div>
+          <div class="col-md-2">
+            <input class="form-control" id="editPrice" type="number" placeholder="Price"/>
+          </div>
+          <div class="col-md-2">
+            <input class="form-control" id="editStock" type="number" placeholder="Stock"/>
+          </div>
+          <div class="col-12">
+            <textarea class="form-control" id="editDesc" rows="2" placeholder="Description"></textarea>
+          </div>
+          <div class="col-12 d-flex gap-2">
+            <button class="btn btn-success btn-sm" onclick="saveEdit()">Save Changes</button>
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('editForm').classList.add('d-none')">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TAB 2: ADD PRODUCT (Add Item sheet) ─────────────────────────────── -->
+    <div id="tab-addProduct" class="d-none">
+      <h5>Add New Product</h5>
+      <div class="card p-4" style="max-width:550px;">
+        <div class="mb-3">
+          <label class="form-label">Product Name</label>
+          <input type="text" class="form-control" id="newName" placeholder="e.g. Wireless Mouse"/>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Category</label>
+          <select class="form-select" id="newCategory">
+            <option value="Electronics">Electronics</option>
+            <option value="Clothing">Clothing</option>
+            <option value="Books">Books</option>
+            <option value="Food">Food</option>
+            <option value="Sports">Sports</option>
+            <option value="Home">Home</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <textarea class="form-control" id="newDesc" rows="2" placeholder="Short description"></textarea>
+        </div>
+        <div class="row">
+          <div class="col-6 mb-3">
+            <label class="form-label">Price (₹)</label>
+            <input type="number" class="form-control" id="newPrice" min="0" placeholder="0.00"/>
+          </div>
+          <div class="col-6 mb-3">
+            <label class="form-label">Stock</label>
+            <input type="number" class="form-control" id="newStock" min="0" placeholder="0"/>
+          </div>
+        </div>
+        <div id="addAlert" class="d-none alert"></div>
+        <button class="btn btn-warning w-100" onclick="addProduct()">Add Product</button>
+      </div>
+    </div>
+
+    <!-- ── TAB 3: ALL ORDERS (Product Status / Update sheet) ──────────────── -->
+    <div id="tab-orders" class="d-none">
+      <h5>All Orders <small class="text-muted">(Update status below)</small></h5>
+      <div id="orderAlert" class="d-none alert"></div>
+      <table class="table table-bordered table-hover">
+        <thead class="table-light">
+          <tr><th>Order ID</th><th>Customer</th><th>Total</th><th>Payment</th><th>Current Status</th><th>Update Status</th></tr>
+        </thead>
+        <tbody id="orderTableBody">
+          <tr><td colspan="6" class="text-center text-muted">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── TAB 4: ITEM REQUESTS (Request Item sheet – Vendor side) ─────────── -->
+    <div id="tab-requests" class="d-none">
+      <h5>User Item Requests</h5>
+      <p class="text-muted">Users have requested these items. Mark as Seen or Fulfilled after adding the product.</p>
+      <div id="reqAlert" class="d-none alert"></div>
+      <table class="table table-bordered table-hover">
+        <thead class="table-light">
+          <tr><th>ID</th><th>Item Name</th><th>Description</th><th>Status</th><th>Date</th><th>Update</th></tr>
+        </thead>
+        <tbody id="reqTableBody">
+          <tr><td colspan="6" class="text-center text-muted">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- /mt-3 -->
+</div><!-- /container -->
+
+<script>
+  const API  = 'http://localhost:8080/api';
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  if (!user || user.role !== 'VENDOR') window.location.href = 'login.html';
+  document.getElementById('vendorName').textContent = user.name;
+
+  // ── TAB SWITCHING ──────────────────────────────────────────────────────────
+  function showTab(name) {
+    ['products','addProduct','orders','requests'].forEach(t => {
+      document.getElementById('tab-' + t).classList.add('d-none');
+    });
+    document.getElementById('tab-' + name).classList.remove('d-none');
+
+    // Update active tab button
+    document.querySelectorAll('#vendorTabs .nav-link').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    // Load data for the selected tab
+    if (name === 'products') loadProducts();
+    if (name === 'orders')   loadOrders();
+    if (name === 'requests') loadRequests();
+  }
+
+  window.onload = loadProducts;
+
+  // ── MY PRODUCTS ────────────────────────────────────────────────────────────
+  async function loadProducts() {
+    const res  = await fetch(`${API}/products/vendor/${user.id}`);
+    const list = await res.json();
+    const tbody = document.getElementById('productTableBody');
+
+    if (!list || list.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-muted text-center">No products yet. Use "Add Product" tab.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = list.map(p => `
+      <tr>
+        <td>${p.id}</td>
+        <td>${p.name}</td>
+        <td>${p.category || '—'}</td>
+        <td>₹${p.price}</td>
+        <td>${p.stock}</td>
+        <td class="d-flex gap-1">
+          <button class="btn btn-sm btn-primary" onclick="openEdit(${p.id},'${escJs(p.name)}','${escJs(p.category)}',${p.price},${p.stock},'${escJs(p.description)}')">Edit</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteProduct(${p.id})">Delete</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function openEdit(id, name, category, price, stock, desc) {
+    document.getElementById('editProductId').value = id;
+    document.getElementById('editName').value      = name;
+    document.getElementById('editCategory').value  = category;
+    document.getElementById('editPrice').value     = price;
+    document.getElementById('editStock').value     = stock;
+    document.getElementById('editDesc').value      = desc;
+    document.getElementById('editForm').classList.remove('d-none');
+    window.scrollTo(0, document.body.scrollHeight);
+  }
+
+  async function saveEdit() {
+    const id       = document.getElementById('editProductId').value;
+    const name     = document.getElementById('editName').value.trim();
+    const category = document.getElementById('editCategory').value.trim();
+    const price    = document.getElementById('editPrice').value;
+    const stock    = document.getElementById('editStock').value;
+    const description = document.getElementById('editDesc').value.trim();
+
+    const res  = await fetch(`${API}/products/${id}/vendor/${user.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, category, price, stock, description })
+    });
+    const data = await res.json();
+    showAlert('productAlert', data.message, data.success);
+    if (data.success) {
+      document.getElementById('editForm').classList.add('d-none');
+      loadProducts();
+    }
+  }
+
+  async function deleteProduct(id) {
+    if (!confirm('Delete this product?')) return;
+    const res  = await fetch(`${API}/products/${id}/vendor/${user.id}`, { method: 'DELETE' });
+    const data = await res.json();
+    showAlert('productAlert', data.message, data.success);
+    loadProducts();
+  }
+
+  // ── ADD PRODUCT ────────────────────────────────────────────────────────────
+  async function addProduct() {
+    const name        = document.getElementById('newName').value.trim();
+    const category    = document.getElementById('newCategory').value;
+    const description = document.getElementById('newDesc').value.trim();
+    const price       = document.getElementById('newPrice').value;
+    const stock       = document.getElementById('newStock').value;
+
+    if (!name || !price || !stock) { showAlert('addAlert','Fill all required fields.', false); return; }
+
+    const res  = await fetch(`${API}/products/vendor/${user.id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, category, description, price: parseFloat(price), stock: parseInt(stock) })
+    });
+    const data = await res.json();
+    showAlert('addAlert', data.message, data.success);
+    if (data.success) {
+      ['newName','newDesc','newPrice','newStock'].forEach(id => document.getElementById(id).value = '');
+    }
+  }
+
+  // ── ALL ORDERS (Vendor sees all orders to update status) ──────────────────
+  async function loadOrders() {
+    const res   = await fetch(`${API}/orders/all`);
+    const list  = await res.json();
+    const tbody = document.getElementById('orderTableBody');
+    if (!list || list.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-muted text-center">No orders yet.</td></tr>';
+      return;
+    }
+
+    const statuses = ['PENDING','PROCESSING','SHIPPED','DELIVERED','CANCELLED'];
+    tbody.innerHTML = list.map(o => `
+      <tr>
+        <td>#${o.orderId}</td>
+        <td>${o.userName}</td>
+        <td>₹${o.totalAmount}</td>
+        <td>${o.paymentMethod}</td>
+        <td><span class="badge bg-secondary">${o.status}</span></td>
+        <td>
+          <div class="d-flex gap-1">
+            <select class="form-select form-select-sm" id="statusSel_${o.orderId}">
+              ${statuses.map(s => `<option value="${s}" ${s===o.status?'selected':''}>${s}</option>`).join('')}
+            </select>
+            <button class="btn btn-sm btn-success" onclick="updateStatus(${o.orderId})">Update</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function updateStatus(orderId) {
+    const status = document.getElementById(`statusSel_${orderId}`).value;
+    const res  = await fetch(`${API}/orders/${orderId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+    const data = await res.json();
+    showAlert('orderAlert', data.message, data.success);
+    if (data.success) loadOrders();
+  }
+
+  // ── ITEM REQUESTS ──────────────────────────────────────────────────────────
+  async function loadRequests() {
+    const res  = await fetch(`${API}/requests/all`);
+    const list = await res.json();
+    const tbody = document.getElementById('reqTableBody');
+    if (!list || list.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-muted text-center">No requests yet.</td></tr>';
+      return;
+    }
+
+    const badge = { OPEN:'primary', SEEN:'warning', FULFILLED:'success' };
+    tbody.innerHTML = list.map(r => `
+      <tr>
+        <td>${r.id}</td>
+        <td>${r.itemName}</td>
+        <td>${r.description || '—'}</td>
+        <td><span class="badge bg-${badge[r.status]}">${r.status}</span></td>
+        <td>${r.createdAt ? r.createdAt.substring(0,10) : '—'}</td>
+        <td>
+          <div class="d-flex gap-1">
+            <button class="btn btn-sm btn-warning" onclick="updateReqStatus(${r.id},'SEEN')">Mark Seen</button>
+            <button class="btn btn-sm btn-success" onclick="updateReqStatus(${r.id},'FULFILLED')">Fulfilled</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function updateReqStatus(id, status) {
+    const res  = await fetch(`${API}/requests/${id}/status?s=${status}`, { method: 'PUT' });
+    const data = await res.json();
+    showAlert('reqAlert', data.message, data.success);
+    loadRequests();
+  }
+
+  // ── HELPERS ────────────────────────────────────────────────────────────────
+  function showAlert(elId, msg, ok) {
+    const el = document.getElementById(elId);
+    el.textContent = msg;
+    el.className = `alert ${ok ? 'alert-success' : 'alert-danger'}`;
+    setTimeout(() => el.classList.add('d-none'), 3000);
+  }
+
+  function escJs(str) {
+    return (str || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
+  }
+
+  function logout() {
+    localStorage.removeItem('user');
+    window.location.href = 'login.html';
+  }
+</script>
+</body>
+</html>

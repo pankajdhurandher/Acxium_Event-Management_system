@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>TechMart – Cart</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-primary px-3">
+  <span class="navbar-brand">TechMart – My Cart</span>
+  <div class="ms-auto d-flex gap-2">
+    <a class="btn btn-outline-light btn-sm" href="products.html">← Back to Products</a>
+    <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <h4>Shopping Cart</h4>
+  <div id="alertMsg" class="d-none alert"></div>
+
+  <!-- Cart table -->
+  <table class="table table-bordered" id="cartTable">
+    <thead class="table-light">
+      <tr>
+        <th>Product</th>
+        <th>Price</th>
+        <th>Quantity</th>
+        <th>Subtotal</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="cartBody">
+      <tr><td colspan="5" class="text-center text-muted">Loading cart...</td></tr>
+    </tbody>
+  </table>
+
+  <!-- Total -->
+  <div class="text-end">
+    <h5>Total: ₹<span id="totalAmount">0.00</span></h5>
+    <a href="checkout.html" class="btn btn-success mt-2" id="checkoutBtn">Proceed to Checkout</a>
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:8080/api';
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  if (!user || user.role !== 'USER') window.location.href = 'login.html';
+
+  window.onload = loadCart;
+
+  async function loadCart() {
+    const res   = await fetch(`${API}/cart/${user.id}`);
+    const items = await res.json();
+    const tbody = document.getElementById('cartBody');
+
+    if (!items || items.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Cart is empty. <a href="products.html">Browse products</a></td></tr>';
+      document.getElementById('totalAmount').textContent = '0.00';
+      document.getElementById('checkoutBtn').classList.add('disabled');
+      return;
+    }
+
+    let total = 0;
+    tbody.innerHTML = items.map(item => {
+      total += parseFloat(item.subtotal);
+      return `
+        <tr>
+          <td>${item.productName}</td>
+          <td>₹${item.price}</td>
+          <td>${item.quantity}</td>
+          <td>₹${item.subtotal}</td>
+          <td>
+            <button class="btn btn-danger btn-sm" onclick="removeItem(${item.cartItemId})">Remove</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    document.getElementById('totalAmount').textContent = total.toFixed(2);
+  }
+
+  async function removeItem(cartItemId) {
+    const res  = await fetch(`${API}/cart/remove/${cartItemId}`, { method: 'DELETE' });
+    const data = await res.json();
+    showAlert(data.message, data.success);
+    loadCart();
+  }
+
+  function showAlert(msg, ok) {
+    const el = document.getElementById('alertMsg');
+    el.textContent = msg;
+    el.className = `alert ${ok ? 'alert-success' : 'alert-danger'}`;
+    setTimeout(() => el.classList.add('d-none'), 3000);
+  }
+
+  function logout() {
+    localStorage.removeItem('user');
+    window.location.href = 'login.html';
+  }
+</script>
+</body>
+</html>
