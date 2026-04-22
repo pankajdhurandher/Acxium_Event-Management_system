@@ -28,8 +28,3 @@ TechMart is a scalable full-stack e-commerce application built using Spring Boot
 - **Backend:** Spring Boot, Java 17
 - **Database:** MySQL
 - **Frontend:** HTML, CSS, JavaScript
-
----
-
-```bash
-git clone <repo-link>
