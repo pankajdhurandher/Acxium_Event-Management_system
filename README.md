@@ -1,4 +1,4 @@
-# 🛒 TechMart – Full Stack E-Commerce Platform
+# 🛒 Acxium_Techmart
 
 ## 🚀 Overview
 TechMart is a scalable full-stack e-commerce application built using Spring Boot and MySQL, supporting multi-role access (Admin, Vendor, User).
